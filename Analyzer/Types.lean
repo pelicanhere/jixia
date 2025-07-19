@@ -145,6 +145,7 @@ inductive ElaborationTree where
 structure ModuleInfo where
   imports : Array Name
   docstring : Array String
+  constants : Array (Name × Name)
 
 structure LineInfo where
   start : String.Pos
