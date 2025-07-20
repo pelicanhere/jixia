@@ -6,6 +6,20 @@ Authors: Tony Beta Lambda
 import Lean
 import Analyzer.Types
 
+namespace Lean
+
+/-- Return the name of the module in which a declaration was defined. -/
+def Environment.getModuleFor? (env : Environment) (declName : Name) : Option Name :=
+  match env.getModuleIdxFor? declName with
+  | none =>
+    if env.constants.map₂.contains declName then
+      env.header.mainModule
+    else
+      none
+  | some idx => env.header.moduleNames[idx.toNat]!
+
+end Lean
+
 open Lean Elab Term Command Frontend Parser
 open Std (HashSet)
 
@@ -32,6 +46,14 @@ where
       | .mdata _ e => go e
       | .proj _ _ e => go e
 
+def getModulesForReferences (refs : HashSet Name) : TermElabM (Std.HashMap Name (Option Name)) := do
+  let env ← getEnv
+  let mut moduleMap : Std.HashMap Name (Option Name) := {}
+  for ref in refs do
+    let moduleName := env.getModuleFor? ref
+    moduleMap := moduleMap.insert ref moduleName
+  return moduleMap
+
 def getSymbolInfo (name : Name) (info : ConstantInfo) : TermElabM SymbolInfo := do
   let kind := match info with
     | .axiomInfo _ => .«axiom»
@@ -54,9 +76,18 @@ def getSymbolInfo (name : Name) (info : ConstantInfo) : TermElabM SymbolInfo := 
     pure format.pretty
   catch _ =>
     pure type.dbgToString
+
   let typeReferences := references info.type
-  let valueReferences := info.value?.map references
-  return { kind, name, type, typeReferences, valueReferences, isProp }
+  let typeModules ← getModulesForReferences typeReferences
+
+  let (valueReferences, valueModules) ← match info.value? with
+    | some value => do
+      let refs := references value
+      let modules ← getModulesForReferences refs
+      pure (some refs, some modules)
+    | none => pure (none, none)
+
+  return { kind, name, type, typeReferences, valueReferences, isProp, typeModules, valueModules }
 
 def getResult (path : System.FilePath) : IO (Array SymbolInfo) := do
   let sysroot ← findSysroot
