@@ -95,6 +95,10 @@ structure SymbolInfo where
   valueReferences : Option (HashSet Name)
   /-- Whether the type of this symbol is a proposition. -/
   isProp : Bool
+  /-- Module names for the type references. -/
+  typeModules : Std.HashMap Name (Option Name)
+  /-- Module names for the value references. `null` if this symbol has no value. -/
+  valueModules : Option (Std.HashMap Name (Option Name))
 
 structure Variable where
   id : Name
