@@ -98,7 +98,7 @@ structure SymbolInfo where
   /-- Module names for the type references. -/
   typeModules : Std.HashMap Name (Option Name)
   /-- Module names for the value references. `null` if this symbol has no value. -/
-  valueModules : Option (Std.HashMap Name (Option Name))
+  valueModules : (Std.HashMap Name (Option Name) × HashSet Name)
 
 structure Variable where
   id : Name

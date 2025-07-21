@@ -79,13 +79,12 @@ def getSymbolInfo (name : Name) (info : ConstantInfo) : TermElabM SymbolInfo := 
 
   let typeReferences := references info.type
   let typeModules ← getModulesForReferences typeReferences
-
-  let (valueReferences, valueModules) ← match info.value? with
-    | some value => do
-      let refs := references value
-      let modules ← getModulesForReferences refs
-      pure (some refs, some modules)
-    | none => pure (none, none)
+  let valueReferences := info.value?.map references
+  let valueModules ← match valueReferences with
+    | some refs => do
+      let valueModules ← getModulesForReferences refs
+      pure (valueModules, refs)
+    | none => pure ({}, {})
 
   return { kind, name, type, typeReferences, valueReferences, isProp, typeModules, valueModules }
 
