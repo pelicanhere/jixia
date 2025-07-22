@@ -48,7 +48,8 @@ where
 
 def getModulesForReferences (refs : HashSet Name) : TermElabM (Std.HashMap Name (Option Name × Option System.FilePath)) := do
   let env ← getEnv
-  let ssp ← initSrcSearchPath
+  let sysroot ← findSysroot
+  let ssp := (← initSrcSearchPath) ++ [sysroot / "src" / "lean"]
   let mut moduleMap : Std.HashMap Name (Option Name × Option System.FilePath) := {}
   for ref in refs do
     let moduleName := env.getModuleFor? ref
@@ -91,8 +92,8 @@ def getSymbolInfo (name : Name) (info : ConstantInfo) : TermElabM SymbolInfo := 
   let valueReferences := info.value?.map references
   let valueModules ← match valueReferences with
     | some refs => do
-      let valueModules ← getModulesForReferences refs
-      pure (valueModules, refs)
+      let Modules ← getModulesForReferences refs
+      pure (Modules, refs)
     | none => pure ({}, {})
 
   return { kind, name, type, typeReferences, valueReferences, isProp, typeModules, valueModules }
