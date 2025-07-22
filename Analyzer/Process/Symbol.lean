@@ -57,7 +57,8 @@ def getModulesForReferences (refs : HashSet Name) : TermElabM (Std.HashMap Name 
       | some modName => do
         try
           let leanPath ← findLean ssp modName
-          pure (some leanPath)
+          let normalizedPath ← IO.FS.realPath leanPath
+          pure (some normalizedPath)
         catch _ =>
           pure none
       | none => pure none
