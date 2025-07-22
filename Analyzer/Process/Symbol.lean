@@ -46,12 +46,21 @@ where
       | .mdata _ e => go e
       | .proj _ _ e => go e
 
-def getModulesForReferences (refs : HashSet Name) : TermElabM (Std.HashMap Name (Option Name)) := do
+def getModulesForReferences (refs : HashSet Name) : TermElabM (Std.HashMap Name (Option Name × Option System.FilePath)) := do
   let env ← getEnv
-  let mut moduleMap : Std.HashMap Name (Option Name) := {}
+  let ssp ← initSrcSearchPath
+  let mut moduleMap : Std.HashMap Name (Option Name × Option System.FilePath) := {}
   for ref in refs do
     let moduleName := env.getModuleFor? ref
-    moduleMap := moduleMap.insert ref moduleName
+    let filePath ← match moduleName with
+      | some modName => do
+        try
+          let leanPath ← findLean ssp modName
+          pure (some leanPath)
+        catch _ =>
+          pure none
+      | none => pure none
+    moduleMap := moduleMap.insert ref (moduleName, filePath)
   return moduleMap
 
 def getSymbolInfo (name : Name) (info : ConstantInfo) : TermElabM SymbolInfo := do
